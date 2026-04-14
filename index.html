@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup Pool 2026</title>
+
+<!--
+=============================================================
+  WORLD CUP POOL 2026 — SETUP GUIDE
+=============================================================
+
+STEP 1 — CREATE A FREE SUPABASE PROJECT
+  1. Go to https://supabase.com and sign up (free, no credit card)
+  2. Click "New project", give it a name like "worldcup-pool"
+  3. Wait ~2 minutes for it to spin up
+  4. Go to Settings > API
+  5. Copy your "Project URL" and "anon public" key
+  6. Paste them into the CONFIG section below (search for PASTE HERE)
+
+STEP 2 — CREATE THE DATABASE TABLE
+  1. In Supabase, go to the SQL Editor
+  2. Paste and run this SQL:
+
+    create table players (
+      id uuid default gen_random_uuid() primary key,
+      name text unique not null,
+      picks jsonb default '{}',
+      submitted boolean default false,
+      created_at timestamptz default now()
+    );
+    alter table players enable row level security;
+    create policy "Allow all" on players for all using (true) with check (true);
+
+STEP 3 — HOST ON GITHUB PAGES
+  1. Go to https://github.com and create a new repository (e.g. "worldcup-pool")
+  2. Make sure it's set to Public
+  3. Upload this file (rename it to index.html before uploading)
+  4. Go to Settings > Pages > Source: Deploy from branch > main > / (root)
+  5. Your site will be live at: https://YOUR-USERNAME.github.io/worldcup-pool
+
+STEP 4 — SHARE THE LINK WITH YOUR FRIENDS!
+
+=============================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  /* ===================== CONFIG YOUR COLORS HERE ===================== */
+  :root {
+    --green: #00c853;
+    --green-dark: #009624;
+    --green-dim: #00c85322;
+    --gold: #ffd600;
+    --red: #e53935;
+    --bg: #0a0f0a;
+    --bg2: #111811;
+    --bg3: #182018;
+    --border: #ffffff18;
+    --border-bright: #ffffff35;
+    --text: #f0f4f0;
+    --text-muted: #7a9a7a;
+    --text-dim: #3a5a3a;
+    --fav-bg: #0a2a1a;
+    --fav-border: #00c85355;
+    --fav-text: #00e676;
+    --draw-bg: #2a2000;
+    --draw-border: #ffd60055;
+    --draw-text: #ffd600;
+    --upset-bg: #2a0a0a;
+    --upset-border: #e5393555;
+    --upset-text: #ff6659;
+    --sel-fav-bg: #00c853;
+    --sel-fav-text: #002a10;
+    --sel-draw-bg: #ffd600;
+    --sel-draw-text: #2a1a00;
+    --sel-upset-bg: #e53935;
+    --sel-upset-text: #fff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--green);
+  }
+  .logo span { color: var(--text); }
+  .header-player {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-player strong { color: var(--text); }
+
+  /* ---- LAYOUT ---- */
+  main { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ---- SETUP BANNER (shown before Supabase is configured) ---- */
+  .setup-banner {
+    background: #1a1200;
+    border: 1px solid #ffd60044;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+    font-size: 14px;
+    color: #ffd600cc;
+    line-height: 1.6;
+  }
+  .setup-banner strong { color: var(--gold); }
+  .setup-banner code {
+    background: #ffffff14;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+    color: var(--gold);
+  }
+
+  /* ---- SCREENS ---- */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---- JOIN SCREEN ---- */
+  .join-hero {
+    text-align: center;
+    padding: 2rem 0 2.5rem;
+  }
+  .join-hero h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(36px, 8vw, 64px);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .join-hero h1 em { color: var(--green); font-style: normal; }
+  .join-hero p { color: var(--text-muted); font-size: 15px; }
+
+  .join-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    max-width: 420px;
+    margin: 0 auto 1.5rem;
+  }
+  .join-card label { display: block; font-size: 12px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .join-card input[type=text] {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 16px;
+    font-family: 'Barlow', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .join-card input[type=text]:focus { border-color: var(--green); }
+  .err-msg { font-size: 12px; color: var(--upset-text); margin-top: 5px; min-height: 18px; }
+
+  .btn-primary {
+    width: 100%;
+    margin-top: 14px;
+    background: var(--green);
+    color: #001a08;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: #00e676; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: var(--text-dim); color: var(--bg3); cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    padding: 9px 18px;
+    color: var(--text-muted);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-ghost:hover { border-color: var(--text-muted); color: var(--text); }
+
+  .players-list { max-width: 420px; margin: 0 auto; }
+  .players-list h3 { font-size: 12px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border-bright);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    flex-shrink: 0;
+  }
+  .player-name { flex: 1; font-size: 14px; font-weight: 500; }
+  .status-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .status-submitted { background: var(--green-dim); color: var(--green); border: 1px solid var(--fav-border); }
+  .status-pending { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .edit-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .edit-btn:hover { border-color: var(--green); color: var(--green); }
+
+  /* ---- BRACKET SCREEN ---- */
+  .bracket-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .bracket-title { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; }
+  .bracket-title span { color: var(--green); }
+  .progress-bar-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 6px;
+    width: 200px;
+    max-width: 100%;
+  }
+  .progress-bar-fill { height: 3px; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+  .progress-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  .bracket-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .group-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+  .group-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .match-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .t-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+  .t-name.right { text-align: right; }
+  .pick-btn {
+    padding: 3px 7px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s;
+    border: 1px solid transparent;
+  }
+  .pick-btn.fav { background: var(--fav-bg); color: var(--fav-text); border-color: var(--fav-border); }
+  .pick-btn.draw { background: var(--draw-bg); color: var(--draw-text); border-color: var(--draw-border); }
+  .pick-btn.upset { background: var(--upset-bg); color: var(--upset-text); border-color: var(--upset-border); }
+  .pick-btn.sel-fav { background: var(--sel-fav-bg); color: var(--sel-fav-text); border-color: var(--sel-fav-bg); }
+  .pick-btn.sel-draw { background: var(--sel-draw-bg); color: var(--sel-draw-text); border-color: var(--sel-draw-bg); }
+  .pick-btn.sel-upset { background: var(--sel-upset-bg); color: var(--sel-upset-text); border-color: var(--sel-upset-bg); }
+
+  /* ---- LEADERBOARD ---- */
+  .lb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .lb-header h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; }
+  .pot-strip {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .pot-chip {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .pot-chip strong { color: var(--text); font-size: 15px; }
+  .lb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .lb-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .lb-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .lb-table tr:last-child td { border-bottom: none; }
+  .lb-table tr:hover td { background: var(--bg2); }
+  .rank-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-dim);
+    width: 32px;
+  }
+  .rank-num.top { color: var(--gold); }
+
+  /* ---- LOADING ---- */
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border-bright);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- SCORING LEGEND ---- */
+  .legend {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    font-size: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  @media (max-width: 500px) {
+    main { padding: 1.25rem 1rem 3rem; }
+    .groups-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== PASTE YOUR SUPABASE CONFIG HERE ===================== -->
+<script>
+  const SUPABASE_URL = 'PASTE_YOUR_SUPABASE_URL_HERE';
+  const SUPABASE_KEY = 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE';
+  const BUYIN = 20; // Change buy-in amount here ($)
+</script>
+<!-- =========================================================================== -->
+
+<header>
+  <div class="logo">WORLD<span>CUP</span> POOL</div>
+  <div class="header-player" id="header-player"></div>
+</header>
+
+<main>
+  <div id="setup-banner" class="setup-banner" style="display:none;">
+    <strong>Setup needed:</strong> Open this file in a text editor and paste your Supabase URL and key into the <code>SUPABASE_URL</code> and <code>SUPABASE_KEY</code> variables near the top. See the full guide in the HTML comments.
+  </div>
+
+  <!-- JOIN SCREEN -->
+  <div id="screen-join" class="screen active">
+    <div class="join-hero">
+      <h1>2026 <em>World Cup</em><br>Group Stage Pool</h1>
+      <p>Pick results for all 48 matches. Upsets pay more.</p>
+    </div>
+    <div class="join-card">
+      <label for="name-input">Your name</label>
+      <input type="text" id="name-input" placeholder="e.g. Jamie" maxlength="30" autocomplete="off">
+      <div class="err-msg" id="join-err"></div>
+      <button class="btn-primary" id="join-btn" onclick="handleJoin()">Join &amp; fill my bracket →</button>
+      <div style="margin-top:10px;text-align:center;">
+        <button class="btn-ghost" onclick="showLeaderboard()">View leaderboard</button>
+      </div>
+    </div>
+    <div class="players-list" id="players-list-area"></div>
+  </div>
+
+  <!-- BRACKET SCREEN -->
+  <div id="screen-bracket" class="screen">
+    <div class="bracket-header">
+      <div>
+        <div class="bracket-title">Bracket — <span id="bracket-name-label"></span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill"></div></div>
+        <div class="progress-label" id="progress-label">0 / 0 predicted</div>
+      </div>
+      <div class="bracket-actions">
+        <button class="btn-ghost" onclick="showJoin()">Back</button>
+        <button class="btn-primary" style="width:auto;margin-top:0;padding:10px 22px;" onclick="handleSubmit()">Submit bracket</button>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--fav-text)"></div>Favourite win = 1pt</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--draw-text)"></div>Draw = 3pts</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--upset-text)"></div>Upset win = 5pts</div>
+    </div>
+    <div class="groups-grid" id="groups-grid"></div>
+  </div>
+
+  <!-- LEADERBOARD SCREEN -->
+  <div id="screen-lb" class="screen">
+    <div class="lb-header">
+      <h2>Leaderboard</h2>
+      <button class="btn-ghost" onclick="showJoin()">Back</button>
+    </div>
+    <div class="pot-strip" id="pot-strip"></div>
+    <div id="lb-content"></div>
+  </div>
+</main>
+
+<!-- Load Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script>
+// ===================== DATA & STATE =====================
+const GROUPS = [
+  {name:"Group A",teams:["Argentina","USA","Poland","Senegal"]},
+  {name:"Group B",teams:["France","Mexico","Australia","Morocco"]},
+  {name:"Group C",teams:["Brazil","Germany","Japan","Canada"]},
+  {name:"Group D",teams:["England","Spain","Ecuador","Cameroon"]},
+  {name:"Group E",teams:["Portugal","Netherlands","South Korea","Ghana"]},
+  {name:"Group F",teams:["Belgium","Croatia","Uruguay","Tunisia"]},
+  {name:"Group G",teams:["Denmark","Switzerland","Serbia","Iran"]},
+  {name:"Group H",teams:["Wales","Colombia","Saudi Arabia","Qatar"]},
+  {name:"Group I",teams:["Italy","Chile","Ivory Coast","New Zealand"]},
+  {name:"Group J",teams:["Sweden","Czechia","Bolivia","DR Congo"]},
+  {name:"Group K",teams:["South Africa","Egypt","Vietnam","Honduras"]},
+  {name:"Group L",teams:["Thailand","Hungary","Costa Rica","Albania"]}
+];
+const PTS_FAV = 1, PTS_DRAW = 3, PTS_UPSET = 5;
+const TOTAL_MATCHES = GROUPS.reduce((s,g) => { const t = g.teams.length; return s + t*(t-1)/2; }, 0);
+
+let supabase = null;
+let currentPlayer = null;
+let currentPicks = {};
+let allPlayers = [];
+
+function getMatches(teams) {
+  const m = [];
+  for (let i = 0; i < teams.length; i++)
+    for (let j = i+1; j < teams.length; j++)
+      m.push([teams[i], teams[j]]);
+  return m;
+}
+function isFav(team, teams) { return teams.indexOf(team) < 2; }
+function initials(name) { return name.trim().split(' ').map(w => w[0]||'').join('').toUpperCase().slice(0,2) || '??'; }
+
+// ===================== INIT =====================
+async function init() {
+  if (SUPABASE_URL === 'PASTE_YOUR_SUPABASE_URL_HERE') {
+    document.getElementById('setup-banner').style.display = 'block';
+    loadDemoPlayers();
+    return;
+  }
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    await loadPlayers();
+  } catch(e) {
+    document.getElementById('setup-banner').style.display = 'block';
+    document.getElementById('setup-banner').innerHTML = '<strong>Connection error:</strong> Check your Supabase URL and key, and make sure the players table has been created.';
+  }
+}
+
+function loadDemoPlayers() {
+  allPlayers = [
+    {name:'Alice', picks:{}, submitted:true},
+    {name:'Bob', picks:{}, submitted:false}
+  ];
+  renderPlayersList();
+}
+
+async function loadPlayers() {
+  const { data, error } = await supabase.from('players').select('name, picks, submitted').order('created_at');
+  if (error) { console.error(error); return; }
+  allPlayers = data || [];
+  renderPlayersList();
+}
+
+// ===================== JOIN SCREEN =====================
+function renderPlayersList() {
+  const area = document.getElementById('players-list-area');
+  if (allPlayers.length === 0) { area.innerHTML = ''; return; }
+  area.innerHTML = `<h3 style="margin-top:1.5rem;">${allPlayers.length} player${allPlayers.length>1?'s':''} joined</h3>` +
+    allPlayers.map(p => `
+      <div class="player-row">
+        <div class="avatar">${initials(p.name)}</div>
+        <div class="player-name">${p.name}</div>
+        <span class="status-badge ${p.submitted ? 'status-submitted' : 'status-pending'}">${p.submitted ? 'Submitted' : 'In progress'}</span>
+        <button class="edit-btn" onclick="loadBracket('${p.name.replace(/'/g,"\\'")}')">Edit</button>
+      </div>`).join('');
+}
+
+async function handleJoin() {
+  const name = document.getElementById('name-input').value.trim();
+  const err = document.getElementById('join-err');
+  err.textContent = '';
+  if (!name) { err.textContent = 'Please enter your name.'; return; }
+  if (name.length > 30) { err.textContent = 'Name too long (max 30 characters).'; return; }
+
+  const btn = document.getElementById('join-btn');
+  btn.disabled = true; btn.textContent = 'Loading…';
+
+  if (supabase) {
+    const existing = allPlayers.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if (!existing) {
+      const { error } = await supabase.from('players').insert({ name, picks: {}, submitted: false });
+      if (error && error.code !== '23505') {
+        err.textContent = 'Error joining. Try again.';
+        btn.disabled = false; btn.textContent = 'Join & fill my bracket →';
+        return;
+      }
+      await loadPlayers();
+    }
+    loadBracket(existing ? existing.name : name);
+  } else {
+    const existing = allPlayers.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if (!existing) allPlayers.push({ name, picks: {}, submitted: false });
+    loadBracket(existing ? existing.name : name);
+  }
+  btn.disabled = false; btn.textContent = 'Join & fill my bracket →';
+}
+
+// ===================== BRACKET SCREEN =====================
+function loadBracket(name) {
+  const player = allPlayers.find(p => p.name === name);
+  currentPlayer = name;
+  currentPicks = player ? JSON.parse(JSON.stringify(player.picks || {})) : {};
+  document.getElementById('bracket-name-label').textContent = name;
+  document.getElementById('header-player').innerHTML = `Playing as <strong>${name}</strong>`;
+  renderGroups();
+  updateProgress();
+  showScreen('bracket');
+}
+
+function renderGroups() {
+  document.getElementById('groups-grid').innerHTML = GROUPS.map(g => {
+    const matches = getMatches(g.teams);
+    return `<div class="group-card">
+      <div class="group-label">${g.name}</div>
+      ${matches.map((m, mi) => {
+        const key = g.name + '-' + mi;
+        const pick = currentPicks[key] || null;
+        const hFav = isFav(m[0], g.teams), aFav = isFav(m[1], g.teams);
+        const hClass = hFav ? 'fav' : 'upset';
+        const aClass = aFav ? 'fav' : 'upset';
+        const hPts = hFav ? PTS_FAV : PTS_UPSET;
+        const aPts = aFav ? PTS_FAV : PTS_UPSET;
+        const hSel = pick === m[0] ? (hFav ? 'sel-fav' : 'sel-upset') : hClass;
+        const drawSel = pick === 'draw' ? 'sel-draw' : 'draw';
+        const aSel = pick === m[1] ? (aFav ? 'sel-fav' : 'sel-upset') : aClass;
+        return `<div class="match-row">
+          <span class="t-name" title="${m[0]}">${m[0]}</span>
+          <button class="pick-btn ${hSel}" onclick="setPick('${g.name}',${mi},'${m[0]}')">${hPts}pt</button>
+          <button class="pick-btn ${drawSel}" onclick="setPick('${g.name}',${mi},'draw')">${PTS_DRAW}pt</button>
+          <button class="pick-btn ${aSel}" onclick="setPick('${g.name}',${mi},'${m[1]}')">${aPts}pt</button>
+          <span class="t-name right" title="${m[1]}">${m[1]}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function setPick(gname, mi, val) {
+  const key = gname + '-' + mi;
+  currentPicks[key] = val;
+  const p = allPlayers.find(x => x.name === currentPlayer);
+  if (p) p.picks = currentPicks;
+  if (supabase) {
+    supabase.from('players').update({ picks: currentPicks }).eq('name', currentPlayer).then(() => {});
+  }
+  renderGroups();
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = Object.keys(currentPicks).length;
+  const pct = Math.round(done / TOTAL_MATCHES * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${done} of ${TOTAL_MATCHES} matches predicted (${pct}%)`;
+}
+
+async function handleSubmit() {
+  const done = Object.keys(currentPicks).length;
+  if (done < TOTAL_MATCHES) {
+    if (!confirm(`You've only predicted ${done} of ${TOTAL_MATCHES} matches. Submit anyway?`)) return;
+  }
+  const p = allPlayers.find(x => x.name === currentPlayer);
+  if (p) { p.picks = currentPicks; p.submitted = true; }
+  if (supabase) {
+    await supabase.from('players').update({ picks: currentPicks, submitted: true }).eq('name', currentPlayer);
+  }
+  alert(`${currentPlayer}'s bracket submitted! Good luck!`);
+  showJoin();
+}
+
+// ===================== LEADERBOARD =====================
+async function showLeaderboard() {
+  if (supabase) await loadPlayers();
+  renderLeaderboard();
+  showScreen('lb');
+}
+
+function renderLeaderboard() {
+  const pot = allPlayers.length * BUYIN;
+  document.getElementById('pot-strip').innerHTML = `
+    <div class="pot-chip">Players <strong>${allPlayers.length}</strong></div>
+    <div class="pot-chip">Total pot <strong>$${pot}</strong></div>
+    <div class="pot-chip">Buy-in <strong>$${BUYIN}</strong></div>
+    <div class="pot-chip">1st place <strong>$${Math.round(pot*0.6)}</strong></div>
+    <div class="pot-chip">2nd place <strong>$${Math.round(pot*0.3)}</strong></div>
+    <div class="pot-chip">3rd place <strong>$${Math.round(pot*0.1)}</strong></div>`;
+
+  const rows = [...allPlayers].sort((a,b) => {
+    const ad = Object.keys(a.picks||{}).length, bd = Object.keys(b.picks||{}).length;
+    return bd - ad;
+  });
+
+  if (rows.length === 0) {
+    document.getElementById('lb-content').innerHTML = '<div class="loading" style="padding:2rem;">No players yet — be the first to join!</div>';
+    return;
+  }
+
+  document.getElementById('lb-content').innerHTML = `
+    <table class="lb-table">
+      <thead><tr>
+        <th>#</th>
+        <th>Player</th>
+        <th style="text-align:right;">Predictions</th>
+        <th style="text-align:right;">Status</th>
+      </tr></thead>
+      <tbody>${rows.map((p, i) => {
+        const done = Object.keys(p.picks||{}).length;
+        return `<tr>
+          <td><div class="rank-num ${i<3?'top':''}">${i+1}</div></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar">${initials(p.name)}</div>
+              <span style="font-weight:500;">${p.name}</span>
+            </div>
+          </td>
+          <td style="text-align:right;color:var(--text-muted);font-size:13px;">${done} / ${TOTAL_MATCHES}</td>
+          <td style="text-align:right;">
+            <span class="status-badge ${p.submitted ? 'status-submitted' : 'status-pending'}">${p.submitted ? 'Submitted' : 'In progress'}</span>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+// ===================== NAVIGATION =====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+function showJoin() {
+  if (supabase) loadPlayers();
+  showScreen('join');
+}
+function showBracket() { showScreen('bracket'); }
+
+init();
+</script>
+</body>
+</html>
