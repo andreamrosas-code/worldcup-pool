@@ -444,8 +444,7 @@ STEP 4 — SHARE THE LINK WITH YOUR FRIENDS!
 <script>
   const SUPABASE_URL = 'https://crlgedrtiazjswdudzbb.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_lxGer1N_8_kSio9j_bKMMg_--vt_ZtM';
-  const BUYIN = 20; // Change buy-in amount here ($)
-</script>
+  const BUYIN = 20; // Change buy-in amount here ($) const DEADLINE = new Date('2026-06-10T23:59:59'); const ADMIN_PASSWORD = 'deadlinepw';
 <!-- =========================================================================== -->
 
 <header>
@@ -473,7 +472,7 @@ STEP 4 — SHARE THE LINK WITH YOUR FRIENDS!
         <button class="btn-ghost" onclick="showLeaderboard()">View leaderboard</button>
       </div>
     </div>
-    <div class="players-list" id="players-list-area"></div>
+    <div class="players-list" id="players-list-area"></div> <div style="margin-top:2rem;max-width:420px;">   <button class="btn-ghost" onclick="showAdmin()">Admin</button> </div> <div id="admin-area" style="display:none;max-width:420px;margin-top:1rem;">   <div class="join-card">     <label>Admin password</label>     <input type="password" id="admin-pw" placeholder="Enter password" style="width:100%;">     <div class="err-msg" id="admin-err"></div>     <button class="btn-primary" style="margin-top:10px;" onclick="checkAdmin()">Unlock</button>   </div>   <div id="admin-players" style="margin-top:1rem;"></div> </div>
   </div>
 
   <!-- BRACKET SCREEN -->
@@ -592,6 +591,7 @@ function renderPlayersList() {
 
 async function handleJoin() {
   const name = document.getElementById('name-input').value.trim();
+  if(new Date() > new Date('2026-06-10T23:59:59')){document.getElementById('join-err').textContent='The deadline has passed. No new entries or edits allowed.';return;}
   const err = document.getElementById('join-err');
   err.textContent = '';
   if (!name) { err.textContent = 'Please enter your name.'; return; }
@@ -660,7 +660,7 @@ function renderGroups() {
   }).join('');
 }
 
-function setPick(gname, mi, val) {
+function setPick(gname, mi, val) {   if(isPastDeadline()) return;
   const key = gname + '-' + mi;
   currentPicks[key] = val;
   const p = allPlayers.find(x => x.name === currentPlayer);
@@ -758,7 +758,7 @@ function showJoin() {
 }
 function showBracket() { showScreen('bracket'); }
 
-init();
+function showAdmin(){   const a=document.getElementById('admin-area');   a.style.display=a.style.display==='none'?'block':'none'; } function checkAdmin(){   const pw=document.getElementById('admin-pw').value;   if(pw!==ADMIN_PASSWORD){document.getElementById('admin-err').textContent='Wrong password.';return;}   document.getElementById('admin-err').textContent='';   renderAdminPlayers(); } function renderAdminPlayers(){   const area=document.getElementById('admin-players');   if(allPlayers.length===0){area.innerHTML='<p style="font-size:13px;color:var(--text-muted);">No players yet.</p>';return;}   area.innerHTML='<h3 style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">DELETE PLAYERS</h3>'+     allPlayers.map(p=>`       <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">         <div class="avatar">${initials(p.name)}</div>         <span style="flex:1;font-size:14px;">${p.name}</span>         <button style="background:var(--upset-bg);border:1px solid var(--upset-border);color:var(--upset-text);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;" onclick="deletePlayer('${p.name.replace(/'/g,"\'")}')">Delete</button>       </div>`).join(''); } async function deletePlayer(name){   if(!confirm('Delete '+name+'?')) return;   if(supabaseClient){     await supabaseClient.from('players').delete().eq('name',name);   }   allPlayers=allPlayers.filter(p=>p.name!==name);   renderAdminPlayers();   renderPlayersList(); } init();
 </script>
 </body>
 </html>
