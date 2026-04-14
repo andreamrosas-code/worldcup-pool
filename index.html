@@ -666,7 +666,7 @@ function setPick(gname, mi, val) {
   const p = allPlayers.find(x => x.name === currentPlayer);
   if (p) p.picks = currentPicks;
   if (supabaseClient) {
-    supabase.from('players').update({ picks: currentPicks }).eq('name', currentPlayer).then(() => {});
+    supabaseClient.from('players').update({ picks: currentPicks }).eq('name', currentPlayer).then(() => {});
   }
   renderGroups();
   updateProgress();
