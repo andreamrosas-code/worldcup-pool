@@ -547,7 +547,7 @@ function initials(name) { return name.trim().split(' ').map(w => w[0]||'').join(
 
 // ===================== INIT =====================
 async function init() {
-  if (SUPABASE_URL === 'PASTE_YOUR_SUPABASE_URL_HERE') {
+  if (SUPABASE_URL === 'https://crlgedrtiazjswdudzbb.supabase.co') {
     document.getElementById('setup-banner').style.display = 'block';
     loadDemoPlayers();
     return;
