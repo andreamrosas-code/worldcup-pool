@@ -442,7 +442,7 @@ STEP 4 — SHARE THE LINK WITH YOUR FRIENDS!
 
 <!-- ===================== PASTE YOUR SUPABASE CONFIG HERE ===================== -->
 <script>
-  const SUPABASE_URL = ' https://crlgedrtiazjswdudzbb.supabase.co';
+  const SUPABASE_URL = 'https://crlgedrtiazjswdudzbb.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_lxGer1N_8_kSio9j_bKMMg_--vt_ZtM';
   const BUYIN = 20; // Change buy-in amount here ($)
 </script>
@@ -530,7 +530,7 @@ const GROUPS = [
 const PTS_FAV = 1, PTS_DRAW = 3, PTS_UPSET = 5;
 const TOTAL_MATCHES = GROUPS.reduce((s,g) => { const t = g.teams.length; return s + t*(t-1)/2; }, 0);
 
-let supabase = null;
+let supabaseClient = null;
 let currentPlayer = null;
 let currentPicks = {};
 let allPlayers = [];
@@ -547,13 +547,13 @@ function initials(name) { return name.trim().split(' ').map(w => w[0]||'').join(
 
 // ===================== INIT =====================
 async function init() {
-  if (SUPABASE_URL === ' https://crlgedrtiazjswdudzbb.supabase.co') {
+  if (SUPABASE_URL === 'PASTE_YOUR_SUPABASE_URL_HERE') {
     document.getElementById('setup-banner').style.display = 'block';
     loadDemoPlayers();
     return;
   }
   try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     await loadPlayers();
   } catch(e) {
     document.getElementById('setup-banner').style.display = 'block';
@@ -570,7 +570,7 @@ function loadDemoPlayers() {
 }
 
 async function loadPlayers() {
-  const { data, error } = await supabase.from('players').select('name, picks, submitted').order('created_at');
+  const { data, error } = await supabaseClient.from('players').select('name, picks, submitted').order('created_at');
   if (error) { console.error(error); return; }
   allPlayers = data || [];
   renderPlayersList();
@@ -600,10 +600,10 @@ async function handleJoin() {
   const btn = document.getElementById('join-btn');
   btn.disabled = true; btn.textContent = 'Loading…';
 
-  if (supabase) {
+  if (supabaseClient) {
     const existing = allPlayers.find(p => p.name.toLowerCase() === name.toLowerCase());
     if (!existing) {
-      const { error } = await supabase.from('players').insert({ name, picks: {}, submitted: false });
+      const { error } = await supabaseClient.from('players').insert({ name, picks: {}, submitted: false });
       if (error && error.code !== '23505') {
         err.textContent = 'Error joining. Try again.';
         btn.disabled = false; btn.textContent = 'Join & fill my bracket →';
@@ -665,7 +665,7 @@ function setPick(gname, mi, val) {
   currentPicks[key] = val;
   const p = allPlayers.find(x => x.name === currentPlayer);
   if (p) p.picks = currentPicks;
-  if (supabase) {
+  if (supabaseClient) {
     supabase.from('players').update({ picks: currentPicks }).eq('name', currentPlayer).then(() => {});
   }
   renderGroups();
@@ -686,8 +686,8 @@ async function handleSubmit() {
   }
   const p = allPlayers.find(x => x.name === currentPlayer);
   if (p) { p.picks = currentPicks; p.submitted = true; }
-  if (supabase) {
-    await supabase.from('players').update({ picks: currentPicks, submitted: true }).eq('name', currentPlayer);
+  if (supabaseClient) {
+    await supabaseClient.from('players').update({ picks: currentPicks, submitted: true }).eq('name', currentPlayer);
   }
   alert(`${currentPlayer}'s bracket submitted! Good luck!`);
   showJoin();
@@ -695,7 +695,7 @@ async function handleSubmit() {
 
 // ===================== LEADERBOARD =====================
 async function showLeaderboard() {
-  if (supabase) await loadPlayers();
+  if (supabaseClient) await loadPlayers();
   renderLeaderboard();
   showScreen('lb');
 }
@@ -753,7 +753,7 @@ function showScreen(id) {
   document.getElementById('screen-' + id).classList.add('active');
 }
 function showJoin() {
-  if (supabase) loadPlayers();
+  if (supabaseClient) loadPlayers();
   showScreen('join');
 }
 function showBracket() { showScreen('bracket'); }
