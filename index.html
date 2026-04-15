@@ -100,10 +100,12 @@ main{max-width:960px;margin:0 auto;padding:2rem 1.25rem 4rem;}
 .pick-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px;}
 .pick-row:last-child{border-bottom:none;}
 .pick-tag{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;white-space:nowrap;}
-.tag-correct{background:var(--fav-bg);color:var(--fav-text);border:1px solid var(--fav-border);}
-.tag-wrong{background:var(--upset-bg);color:var(--upset-text);border:1px solid var(--upset-border);}
-.tag-pending{background:var(--draw-bg);color:var(--draw-text);border:1px solid var(--draw-border);}
-.tag-none{color:var(--text-dim);font-size:11px;}
+.tag-correct{background:#1a1a2a;color:#a0a0f0;border:1px solid #a0a0f055;}
+.tag-wrong{background:#1a1a1a;color:#555;border:1px solid #33333355;}
+.tag-pending{background:transparent;color:#3a5a3a;border:1px solid #ffffff12;}
+.pts-earned{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#00c853;white-space:nowrap;min-width:28px;text-align:right;}
+.pts-zero{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:#3a5a3a;min-width:28px;text-align:right;}
+.pts-dash{font-size:12px;color:#3a5a3a;min-width:28px;text-align:right;}
 .match-teams{color:var(--text-muted);flex:1;}
 .match-pick{color:var(--text);font-weight:500;}
 @media(max-width:500px){main{padding:1.25rem 1rem 3rem;}.groups-grid{grid-template-columns:1fr;}}
@@ -567,11 +569,22 @@ function showPlayerDetail(name){
       if(pick&&outcome==='correct'){tagClass='tag-correct';tagText='Correct';}
       else if(pick&&outcome==='wrong'){tagClass='tag-wrong';tagText='Wrong';}
       else if(pick&&outcome==='pending'){tagClass='tag-pending';tagText='Pending';}
-      html+='<div class="pick-row">';
-      html+='<span class="match-teams">'+m[0]+' vs '+m[1]+'</span>';
-      if(pick) html+='<span class="match-pick">'+pickLabel+'</span>';
-      html+='<span class="pick-tag '+tagClass+'">'+tagText+'</span>';
-      html+='</div>';
+     var ptsEarned='';
+if(outcome==='correct'){
+  if(pick==='draw') ptsEarned='+'+PTS_DRAW;
+  else if((pick===m[0]&&isFav(m[0],g.teams))||(pick===m[1]&&isFav(m[1],g.teams))) ptsEarned='+'+PTS_FAV;
+  else ptsEarned='+'+PTS_UPSET;
+}
+html+='<div class="pick-row">';
+html+='<span class="match-teams">'+m[0]+' vs '+m[1]+'</span>';
+if(pick){ html+='<span class="match-pick">'+pickLabel+'</span>'; }
+else { html+='<span class="pick-none">No pick</span>'; }
+html+='<span class="pick-tag '+tagClass+'">'+tagText+'</span>';
+if(outcome==='correct') html+='<span class="pts-earned">'+ptsEarned+'</span>';
+else if(outcome==='wrong') html+='<span class="pts-zero">0</span>';
+else if(pick) html+='<span class="pts-dash">—</span>';
+else html+='<span class="pts-dash"></span>';
+html+='</div>';
     }
     html+='</div>';
   }
